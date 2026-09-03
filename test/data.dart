@@ -13,6 +13,7 @@ enum VideoIdData {
   requiresPurchase('p3dDcKOFXQg'),
   liveStream('jfKfPfyJRdk'),
   liveStreamRecording('rsAAeyAr-9Y'),
+  forKids('nQuzyJ-C1Fc'),
   withBrokenTitle('4ZJWv6t-PfY'),
   withHighQualityStreams('V5Fsj_sCKdg'),
   withOmnidirectionalStreams('-xNN-bJQ4vI'),
@@ -66,7 +67,9 @@ enum VideoIdData {
     withBrokenClosedCaptions,
   ];
 
-  // Videos whose streams can be fetched.
+  // Videos whose streams can be fetched with the standard adaptive assertions.
+  // [forKids] is tested separately because its compatibility fallback may expose
+  // a muxed progressive stream rather than the normal adaptive set.
   static const playable = [
     ...VideoIdData.validWatchpage,
 /*

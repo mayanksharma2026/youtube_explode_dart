@@ -32,7 +32,7 @@ class StreamClient {
   ///
   /// See [YoutubeApiClient] for all the possible clients that can be set using the [ytClients] parameter.
   /// If [ytClients] is null the library automatically manages the clients, otherwise only the clients provided are used.
-  /// Currently by default the  [YoutubeApiClient.androidSdkless] client is used,
+  /// Currently by default the [YoutubeApiClient.visionOs] client is used,
   /// and if a js solver is provided the [YoutubeApiClient.safari] is used additionally.
   ///
   ///
@@ -65,7 +65,7 @@ class StreamClient {
         'ytClients cannot be an empty list');
 
     videoId = VideoId.fromString(videoId);
-    final clients = ytClients ?? [YoutubeApiClient.androidSdkless];
+    final clients = ytClients ?? [YoutubeApiClient.visionOs];
 
     if (_jsChallengeSolver != null && ytClients == null) {
       clients.add(YoutubeApiClient.safari);
@@ -122,10 +122,36 @@ class StreamClient {
       }
     }
 
-    // If the user has not provided any client retry with the tv which work also in some restricted videos.
-    if (uniqueStreams.isEmpty && ytClients == null) {
-      return getManifest(videoId, ytClients: [YoutubeApiClient.tv]);
+    // VISIONOS does not cover every content class (notably some made-for-kids
+    // videos). If the default profile fails for a compatibility reason, try a
+    // current Android profile before preserving the existing TV fallback.
+    // Do not switch clients for purchase errors, rate limiting, closed clients,
+    // transient server failures, or unrelated parser/solver exceptions.
+    if (uniqueStreams.isEmpty &&
+        ytClients == null &&
+        _shouldTryCompatibilityFallback(lastException)) {
+      try {
+        return await getManifest(
+          videoId,
+          ytClients: [YoutubeApiClient.android],
+          requireWatchPage: requireWatchPage,
+        );
+      } catch (e, s) {
+        if (!_shouldTryCompatibilityFallback(e)) rethrow;
+        _logger.fine(
+          'Android compatibility fallback failed for video $videoId: $e',
+          e,
+          s,
+        );
+      }
+
+      return getManifest(
+        videoId,
+        ytClients: [YoutubeApiClient.tv],
+        requireWatchPage: requireWatchPage,
+      );
     }
+
     if (uniqueStreams.isEmpty) {
       if (lastException is Error && lastException.stackTrace != null) {
         throw Error.throwWithStackTrace(
@@ -136,6 +162,27 @@ class StreamClient {
               'Video "$videoId" has no available streams');
     }
     return StreamManifest(uniqueStreams.toList());
+  }
+
+  bool _shouldTryCompatibilityFallback(Object? error) {
+    if (error == null ||
+        error is VideoRequiresPurchaseException ||
+        error is RequestLimitExceededException ||
+        error is TransientFailureException ||
+        error is HttpClientClosedException) {
+      return false;
+    }
+
+    if (error is FatalFailureException) {
+      return error.statusCode == 403;
+    }
+
+    if (error is VideoUnplayableException) {
+      return true;
+    }
+
+    return error is YoutubeExplodeException &&
+        error.toString().contains('returned 403');
   }
 
   /// Gets the HTTP Live Stream (HLS) manifest URL
@@ -233,6 +280,7 @@ class StreamClient {
     final solver = _jsChallengeSolver;
     if (solver != null) {
       for (final stream in streams) {
+        if (stream.url.isNullOrWhiteSpace) continue;
         try {
           final url = Uri.parse(stream.url);
           if (url.queryParameters.containsKey('n')) {
@@ -272,9 +320,16 @@ class StreamClient {
     // Second pass: process streams with solved challenges
     for (final stream in streams) {
       final itag = stream.tag;
+      final rawUrl = stream.url;
+      if (rawUrl.isNullOrWhiteSpace) {
+        _logger.fine(
+            'Skipping stream itag $itag because it has no progressive URL.');
+        continue;
+      }
+
       late Uri url;
       try {
-        url = Uri.parse(stream.url);
+        url = Uri.parse(rawUrl);
       } catch (e) {
         continue;
       }
