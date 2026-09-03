@@ -25,4 +25,4 @@ Changing the implicit default in `StreamClient.getManifest` is a behaviour chang
 - documented known limitations and fallback behaviour;
 - no unrelated parser/transport changes in the same PR unless required by the root cause.
 
-Current fork context (2026-09): VisionOS was adopted after Android SDK-less/Android VR/iOS direct media URLs began returning 403 under newer GVS PO-token enforcement. Revalidate this statement when maintaining the profile; do not assume it remains true indefinitely.
+Current fork context (2026-09): VisionOS was added as an explicit compatibility profile after Android SDK-less/Android VR/iOS direct media URLs began returning 403 under newer GVS PO-token enforcement. The baseline patch intentionally does not change the upstream implicit default; promoting a new default is a separate behaviour decision. Revalidate this context during future maintenance.
