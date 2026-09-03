@@ -5,6 +5,27 @@ This is a port of the [YoutubeExplode] library from C#, most of the functions, d
 ![License](https://img.shields.io/github/license/Hexer10/youtube_explode_dart)
 ![Lint](https://img.shields.io/badge/style-lint-4BC0F5.svg)
 
+## Maintained fork
+
+This repository is a compatibility-maintained fork of [Hexer10/youtube_explode_dart][Upstream]. It stays close to canonical upstream while allowing reviewed fixes to land when YouTube changes break production before an upstream release is available.
+
+Maintenance changes are intentionally evidence-driven and small. Before changing reverse-engineered behaviour, start with [AGENTS.md](AGENTS.md), then read the nearest folder-level `AGENTS.md`. The current maintenance source of truth is:
+
+- [Maintenance workflow](docs/maintenance.md)
+- [Reference repositories and Dart fork ledger](docs/reference-repositories.md)
+- [InnerTube client profiles](docs/client-profiles.md)
+
+Agents and maintainers must compare current Dart issues/PRs, divergent forks, and maintained cross-language implementations before porting a workaround. Do not blindly copy another project's patch or use arbitrary client/User-Agent randomisation as a reliability strategy.
+
+Production consumers of this fork should pin a reviewed tag or commit instead of following a moving branch:
+
+```yaml
+youtube_explode_dart:
+  git:
+    url: https://github.com/mayanksharma2026/youtube_explode_dart.git
+    ref: <reviewed-tag-or-commit>
+```
+
 It used to build [Youtube Downloader Flutter](https://github.com/Hexer10/youtube_downloader_flutter) (A cross-platform application to download video streams from youtube using this library & flutter)
 
 ---
@@ -30,9 +51,9 @@ YoutubeExplode is a library that provides an interface to query metadata of YouT
 
 ### Install
 
-Add the dependency to the pubspec.yaml (Check for the latest version)
+For the canonical pub.dev package, add the dependency to `pubspec.yaml` and check for the latest upstream version:
 ```yaml
-youtube_explode_dart: ^2.3.4
+youtube_explode_dart: ^3.1.0
 ```
 
 Import the library
@@ -242,6 +263,7 @@ You can find how most APIs can be used in the files inside the test/ folder.
 - [yt-dlp] for documentation and reverse engineering about the YouTube apis, and implementation of the EJS modules.
 - All the [Contributors] of this repository.
 
+[Upstream]: https://github.com/Hexer10/youtube_explode_dart
 [YoutubeExplode]: https://github.com/Tyrrrz/YoutubeExplode/
 [API]: https://pub.dev/documentation/youtube_explode_dart/latest/youtube_explode/youtube_explode-library.html
 [Examples]: https://github.com/Hexer10/youtube_explode_dart/tree/master/example
