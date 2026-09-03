@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
@@ -132,7 +133,8 @@ class YoutubeHttpClient extends http.BaseClient {
   /// accessible with [headers].
   ///
   /// This is intentionally stronger than a manifest parse or plain HEAD
-  /// request. It validates the same range/fragment/HLS path used by download.
+  /// request. It validates the same range, fragment, or HLS path used by the
+  /// download implementation without buffering a full fragment/segment.
   Future<void> validateMediaStream(
     StreamInfo streamInfo, {
     Map<String, String> headers = const {},
@@ -144,39 +146,34 @@ class YoutubeHttpClient extends http.BaseClient {
 
     if (streamInfo.fragments.isNotEmpty) {
       final fragment = streamInfo.fragments.first;
-      final response = await retry(
-        this,
-        () => get(
-          Uri.parse(streamInfo.url.toString() + fragment.path),
-          headers: headers,
-          validate: true,
-        ),
+      final fragmentUrl =
+          Uri.parse(streamInfo.url.toString() + fragment.path);
+      await _validateMediaRequest(
+        () => _createGetRequest(fragmentUrl, headers),
+        streamInfo.tag,
       );
-      if (response.bodyBytes.isEmpty) {
-        throw YoutubeExplodeException(
-          'Stream ${streamInfo.tag} returned no media bytes.',
-        );
-      }
       return;
     }
 
     if (streamInfo is HlsStreamInfo) {
-      try {
-        final bytes = await _getHlsStream(
-          streamInfo,
+      final videoIndex = await retry(
+        this,
+        () => getString(
+          streamInfo.url,
           headers: headers,
           validate: true,
-        ).first;
-        if (bytes.isEmpty) {
-          throw YoutubeExplodeException(
-            'HLS stream ${streamInfo.tag} returned no media bytes.',
-          );
-        }
-      } on StateError {
+        ),
+      );
+      final segments = HlsManifest.parseVideoSegments(videoIndex);
+      if (segments.isEmpty) {
         throw YoutubeExplodeException(
           'HLS stream ${streamInfo.tag} returned no media segments.',
         );
       }
+      await _validateMediaRequest(
+        () => _createGetRequest(Uri.parse(segments.first.url), headers),
+        streamInfo.tag,
+      );
       return;
     }
 
@@ -188,17 +185,22 @@ class YoutubeHttpClient extends http.BaseClient {
     }
 
     final lastByte = totalBytes > probeBytes ? probeBytes - 1 : totalBytes - 1;
-    final response = await retry(
-      this,
-      () => send(
-        _createRangeRequest(
-          streamInfo.url,
-          0,
-          lastByte,
-          headers,
-        ),
+    await _validateMediaRequest(
+      () => _createRangeRequest(
+        streamInfo.url,
+        0,
+        lastByte,
+        headers,
       ),
+      streamInfo.tag,
     );
+  }
+
+  Future<void> _validateMediaRequest(
+    http.BaseRequest Function() createRequest,
+    int streamTag,
+  ) async {
+    final response = await retry(this, () => send(createRequest()));
     _validateResponse(response, response.statusCode);
 
     final firstChunk = await response.stream.firstWhere(
@@ -207,7 +209,7 @@ class YoutubeHttpClient extends http.BaseClient {
     );
     if (firstChunk.isEmpty) {
       throw YoutubeExplodeException(
-        'Stream ${streamInfo.tag} returned no media bytes.',
+        'Stream $streamTag returned no media bytes.',
       );
     }
   }
@@ -226,8 +228,6 @@ class YoutubeHttpClient extends http.BaseClient {
         streamInfo,
         headers: headers,
         validate: validate,
-        start: start,
-        errorCount: errorCount,
       );
     }
     if (streamInfo is HlsStreamInfo) {
@@ -252,8 +252,6 @@ class YoutubeHttpClient extends http.BaseClient {
     StreamInfo streamInfo, {
     Map<String, String> headers = const {},
     bool validate = true,
-    int start = 0,
-    int errorCount = 0,
   }) async* {
     final url = streamInfo.url;
     for (final fragment in streamInfo.fragments) {
@@ -267,6 +265,15 @@ class YoutubeHttpClient extends http.BaseClient {
       );
       yield response.bodyBytes;
     }
+  }
+
+  http.Request _createGetRequest(
+    Uri url,
+    Map<String, String> headers,
+  ) {
+    final request = http.Request('GET', url);
+    request.headers.addAll(headers);
+    return request;
   }
 
   http.Request _createRangeRequest(
@@ -303,9 +310,13 @@ class YoutubeHttpClient extends http.BaseClient {
       try {
         final response = await retry(this, () async {
           final from = bytesCount;
-          final to = (streamInfo.isThrottled
-                  ? bytesCount + 10379935
-                  : streamInfo.size.totalBytes) -
+          final requestedExclusiveEnd = streamInfo.isThrottled
+              ? bytesCount + 10379935
+              : streamInfo.size.totalBytes;
+          final to = math.min(
+                requestedExclusiveEnd,
+                streamInfo.size.totalBytes,
+              ) -
               1;
           return send(_createRangeRequest(url, from, to, headers));
         });
@@ -334,9 +345,15 @@ class YoutubeHttpClient extends http.BaseClient {
           }
         }
 
+        final bytesBeforeResponse = bytesCount;
         await for (final data in response.stream) {
           bytesCount += data.length;
           yield data;
+        }
+        if (bytesCount == bytesBeforeResponse) {
+          throw YoutubeExplodeException(
+            'Stream ${streamInfo.tag} returned no media bytes.',
+          );
         }
         errorCount = 0;
       } on HttpClientClosedException {
@@ -422,17 +439,23 @@ class YoutubeHttpClient extends http.BaseClient {
     Map<String, String> headers = const {},
     bool validate = true,
   }) async* {
-    final videoIndex = await getString(
-      stream.url,
-      headers: headers,
-      validate: validate,
+    final videoIndex = await retry(
+      this,
+      () => getString(
+        stream.url,
+        headers: headers,
+        validate: validate,
+      ),
     );
     final video = HlsManifest.parseVideoSegments(videoIndex);
     for (final segment in video) {
-      final data = await get(
-        Uri.parse(segment.url),
-        headers: headers,
-        validate: validate,
+      final data = await retry(
+        this,
+        () => get(
+          Uri.parse(segment.url),
+          headers: headers,
+          validate: validate,
+        ),
       );
       yield data.bodyBytes;
     }
@@ -466,8 +489,10 @@ class YoutubeHttpClient extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (_closed) throw HttpClientClosedException();
 
+    final explicitHeaders =
+        request.headers.keys.map((key) => key.toLowerCase()).toSet();
     headers.forEach((key, value) {
-      if (!request.headers.containsKey(key)) {
+      if (explicitHeaders.add(key.toLowerCase())) {
         request.headers[key] = value;
       }
     });
