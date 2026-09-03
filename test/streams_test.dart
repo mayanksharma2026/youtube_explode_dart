@@ -34,6 +34,27 @@ void main() {
     expect(manifest.streams.length, greaterThan(50));
   }, skip: skipGH);
 
+  test('VisionOS returns fetchable audio and video streams', () async {
+    final manifest = await yt!.videos.streams.getManifest(
+      VideoIdData.normal.id,
+      ytClients: [YoutubeApiClient.visionOs],
+    );
+
+    expect(manifest.audioOnly, isNotEmpty);
+    expect(manifest.videoOnly, isNotEmpty);
+
+    // Reading actual media bytes catches the failure mode where the player API
+    // returns a valid-looking manifest but the CDN URL responds with HTTP 403.
+    expect(
+      await yt!.videos.streams.get(manifest.audioOnly.first).first,
+      isNotEmpty,
+    );
+    expect(
+      await yt!.videos.streams.get(manifest.videoOnly.first).first,
+      isNotEmpty,
+    );
+  }, skip: skipGH);
+
   test('Stream of paid videos throw VideoRequiresPurchaseException', () {
     expect(
       yt!.videos.streams.getManifest(VideoIdData.requiresPurchase.id),
