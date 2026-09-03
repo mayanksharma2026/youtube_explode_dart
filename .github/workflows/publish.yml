@@ -3,11 +3,14 @@ name: Publish to pub.dev
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+*' # tag-pattern on pub.dev: 'v{{version}}'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
 
-# Publish using the reusable workflow from dart-lang.
+# The fork is consumed through pinned Git tags/commits. Guard the upstream
+# trusted-publishing workflow so fork release tags cannot attempt to publish
+# the upstream package name to pub.dev.
 jobs:
   publish:
+    if: github.repository == 'Hexer10/youtube_explode_dart'
     permissions:
-      id-token: write # Required for authentication using OIDC
+      id-token: write
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1

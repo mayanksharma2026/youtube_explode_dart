@@ -1,0 +1,109 @@
+name: YouTube protocol or parser breakage
+description: Report a reproducible player, stream, search, channel, playlist, caption, or parser regression.
+title: "[YouTube breakage]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include cookies, authorization headers, visitor data, PO tokens, account details, private content, or complete signed media URLs.
+
+  - type: input
+    id: observed_at
+    attributes:
+      label: First observed UTC time
+      placeholder: "2026-09-03T18:00:00Z"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version and exact commit
+      placeholder: "3.1.0 / full SHA"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Dart/Flutter version, OS/device/runtime, and coarse network/region information.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include the smallest Dart code and public IDs needed to reproduce.
+      render: dart
+    validations:
+      required: true
+
+  - type: input
+    id: clients
+    attributes:
+      label: YouTube client profile(s)
+      placeholder: "visionOs, androidVr, explicit custom client, or default"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: failing_stage
+    attributes:
+      label: Failing stage
+      options:
+        - Watch page / initial data
+        - InnerTube player request
+        - Playability status
+        - Signature or n challenge
+        - DASH/HLS manifest
+        - Content-length or media probe
+        - Actual media byte-range / fragment / segment
+        - Search/channel/playlist continuation parser
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: result
+    attributes:
+      label: Actual result
+      description: Exception class, HTTP status, and whether manifest parsing and actual media bytes succeeded.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: samples
+    attributes:
+      label: Public sample IDs and scope
+      description: List reproducible public IDs and known working/non-working categories. Do not include private content.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs
+      description: Remove cookies, tokens, visitor/account data, and signed URL query strings.
+      render: text
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I reproduced this with a minimal example.
+          required: true
+        - label: I checked current upstream issues and pull requests.
+          required: true
+        - label: I removed credentials, identifiers, and signed media URLs.
+          required: true

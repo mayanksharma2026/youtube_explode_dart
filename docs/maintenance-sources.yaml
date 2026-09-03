@@ -1,0 +1,339 @@
+schema_version: 1
+last_reviewed_utc: "2026-09-03T18:45:00Z"
+owner: "mayanksharma2026"
+repository: "youtube_explode_dart"
+
+policy:
+  compare_before_porting: true
+  require_exact_revision_in_pr: true
+  require_live_media_validation_for_stream_changes: true
+  allow_random_client_fingerprints: false
+  allow_blind_cherry_pick: false
+  allow_automatic_merge_from_source_watch: false
+  notes:
+    - "Refresh moving branch heads before every protocol investigation."
+    - "Recent activity is a discovery signal, not proof that a patch is correct."
+    - "Review the source licence and preserve attribution before reusing code."
+    - "Prefer a local design that fits this package over copying app-specific behaviour."
+
+canonical_dart:
+  - repo: "Hexer10/youtube_explode_dart"
+    url: "https://github.com/Hexer10/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "44a39a65d8e274806247d52af8f0bacd77691d38"
+    reviewed_at_utc: "2026-09-03T18:10:00Z"
+    role: "upstream"
+    inspect:
+      - "issues and pull requests"
+      - "lib/src/videos"
+      - "lib/src/reverse_engineering"
+      - "test"
+    notes:
+      - "Always check upstream first to avoid duplicating accepted work."
+
+cross_language_references:
+  - repo: "yt-dlp/yt-dlp"
+    url: "https://github.com/yt-dlp/yt-dlp"
+    language: "Python"
+    branch: "master"
+    reviewed_commit: "bbc809a1161d3bfca51fa36f59dda35556ee85a0"
+    reviewed_at_utc: "2026-09-03T18:43:00Z"
+    role: "primary-protocol-reference"
+    inspect:
+      - "yt_dlp/extractor/youtube/_base.py"
+      - "yt_dlp/extractor/youtube/_video.py"
+      - "yt_dlp/extractor/youtube/pot"
+      - "yt_dlp/extractor/youtube/jsc"
+    useful_for:
+      - "InnerTube client identities"
+      - "client default chains"
+      - "PO-token policy"
+      - "player and media format extraction"
+      - "EJS integration"
+    notes:
+      - "Translate behaviour into Dart; do not assume Python architecture maps directly."
+
+  - repo: "Tyrrrz/YoutubeExplode"
+    url: "https://github.com/Tyrrrz/YoutubeExplode"
+    language: "C#"
+    branch: "prime"
+    reviewed_commit: "5d7f8343e73ee8361474a9113e983dce2e8af2f3"
+    reviewed_at_utc: "2026-09-03T18:42:00Z"
+    role: "architecture-and-protocol-reference"
+    inspect:
+      - "YoutubeExplode/Videos"
+      - "YoutubeExplode/Bridge"
+      - "YoutubeExplode.Tests"
+    useful_for:
+      - "original YoutubeExplode domain model"
+      - "player and stream architecture"
+      - "test data and parser fixes"
+
+  - repo: "TeamNewPipe/NewPipeExtractor"
+    url: "https://github.com/TeamNewPipe/NewPipeExtractor"
+    language: "Java"
+    branch: "dev"
+    reviewed_commit: "13a655fe53e0c3065f88725fc1fb594c3ede0169"
+    reviewed_at_utc: "2026-09-03T18:43:00Z"
+    role: "independent-extractor-reference"
+    inspect:
+      - "extractor-services/youtube"
+      - "YouTube issues and tests"
+    useful_for:
+      - "response-shape migrations"
+      - "playability and stream observations"
+      - "mobile-client behaviour"
+
+  - repo: "LuanRT/YouTube.js"
+    url: "https://github.com/LuanRT/YouTube.js"
+    language: "TypeScript"
+    branch: "main"
+    reviewed_commit: "a480854c501406cf55c9eb7ad5b540ab36a65b56"
+    reviewed_at_utc: "2026-09-03T18:44:00Z"
+    role: "innertube-reference"
+    inspect:
+      - "src/core"
+      - "src/parser"
+      - "src/utils"
+    useful_for:
+      - "InnerTube request context"
+      - "generated parser nodes"
+      - "player/session behaviour"
+
+  - repo: "iv-org/invidious"
+    url: "https://github.com/iv-org/invidious"
+    language: "Crystal"
+    branch: "master"
+    reviewed_commit: "b3a3f3a6df47d090c22c2f16bb8128688020538d"
+    reviewed_at_utc: "2026-09-03T18:44:00Z"
+    role: "independent-service-reference"
+    inspect:
+      - "src/invidious/videos"
+      - "src/invidious/yt_backend"
+      - "YouTube issues"
+    useful_for:
+      - "player and media regressions seen at service scale"
+      - "response-shape and throttling observations"
+
+  - repo: "Brainicism/bgutil-ytdlp-pot-provider"
+    url: "https://github.com/Brainicism/bgutil-ytdlp-pot-provider"
+    language: "TypeScript"
+    branch: "master"
+    reviewed_commit: "09f2f0a7cbd0d091b3b59178b36fe827d9094ec6"
+    reviewed_at_utc: "2026-09-03T18:46:00Z"
+    role: "po-token-specialist-reference"
+    inspect:
+      - "server"
+      - "plugin"
+      - "issues and protocol documentation"
+    useful_for:
+      - "PO-token lifecycle and provider contracts"
+    notes:
+      - "Do not add token support to this package without a separate security and API design review."
+
+maintained_dart_forks:
+  - repo: "lydonator/youtube_explode_dart"
+    url: "https://github.com/lydonator/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "f6c104c8a0efe3e7bb9e3f859ca4addc45ad5926"
+    reviewed_at_utc: "2026-09-03T18:20:00Z"
+    role: "focused-fix-source"
+    relevant_changes:
+      - "VISIONOS client profile"
+      - "focused live manifest regression"
+    adoption: "baseline-for-comparison"
+
+  - repo: "justacalico/youtube_explode_dart"
+    url: "https://github.com/justacalico/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "c80de2735c18be0cccc283fe840b48f1b183b4e1"
+    reviewed_at_utc: "2026-09-03T18:21:00Z"
+    role: "active-fork"
+    relevant_changes:
+      - "VisionOS default"
+      - "client status annotations"
+      - "broader stream handling"
+    cautions:
+      - "Review the complete mixed diff before adopting individual ideas."
+
+  - repo: "its-ashutosh-pathak/youtube_explode_dart"
+    url: "https://github.com/its-ashutosh-pathak/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "edad2760cc7998bcc18013dc9880c052ad32598f"
+    reviewed_at_utc: "2026-09-03T18:22:00Z"
+    role: "active-fork"
+    relevant_changes:
+      - "VisionOS profile and default"
+      - "playlist/search/parser changes"
+      - "non-muxed filtering"
+    cautions:
+      - "Combines unrelated protocol and parser changes."
+      - "Silently filtering non-muxed streams is not accepted in this fork."
+
+  - repo: "vargasgustavo/youtube_explode_dart"
+    url: "https://github.com/vargasgustavo/youtube_explode_dart"
+    branch: "fix-visionos-403"
+    reviewed_commit: "edad2760cc7998bcc18013dc9880c052ad32598f"
+    reviewed_at_utc: "2026-09-03T18:22:00Z"
+    role: "mirror-of-active-fix"
+    notes:
+      - "Same reviewed change as its-ashutosh-pathak; do not count as independent confirmation."
+
+  - repo: "gmstyle/youtube_explode_dart"
+    url: "https://github.com/gmstyle/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "fe43c513ea35c2352f00b2ce650083c81c3e4a57"
+    reviewed_at_utc: "2026-09-03T18:30:00Z"
+    role: "active-fork"
+    relevant_changes:
+      - "invalid/non-absolute stream URL handling"
+      - "adaptive stream probes"
+      - "HLS master URL exposure"
+      - "VisionOS support"
+      - "related-video and Shorts parser fixes"
+    cautions:
+      - "Some fallback assumptions predate the 2026-08-17 Android VR enforcement change."
+      - "Review each commit independently; do not import the branch wholesale."
+
+  - repo: "onyxmusic/youtube_explode_dart"
+    url: "https://github.com/onyxmusic/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "ada5cb6758388421c931ebf10f63e1a1cf2acfa5"
+    reviewed_at_utc: "2026-09-03T18:31:00Z"
+    role: "active-fork"
+    relevant_changes:
+      - "VisionOS default"
+      - "playlist/channel/related-video fixes"
+    cautions:
+      - "Removes stream HEAD validation and catches watch-page failures broadly."
+      - "Uses Android SDK-less fallback after it was observed failing."
+      - "Useful as an incident signal, not as a direct patch source."
+
+  - repo: "Bikram-Kumar/youtube_explode_dart"
+    url: "https://github.com/Bikram-Kumar/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "6f28a8bf0f00c1ef7073c335bafe48f8bab05edc"
+    reviewed_at_utc: "2026-09-03T18:32:00Z"
+    role: "active-fork"
+    relevant_changes:
+      - "VisionOS default"
+      - "playlist lockup parsing"
+      - "search count and channel parsing"
+    cautions:
+      - "Mixed stream and parser patch."
+      - "Contains non-muxed stream filtering that can hide failures."
+
+  - repo: "jameszhou123/youtube_explode_dart"
+    url: "https://github.com/jameszhou123/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "cbe63502884da2fa0f0f09a9784fa831ab5867"
+    reviewed_at_utc: "2026-09-03T18:33:00Z"
+    role: "parser-focused-fork"
+    relevant_changes:
+      - "search runs-format handling"
+      - "lockup video/channel parsing"
+      - "channel uploads lockup parsing"
+    cautions:
+      - "Separate general parser fixes from app-policy filtering such as members-only exclusion."
+
+  - repo: "hamza72x/youtube_explode_dart"
+    url: "https://github.com/hamza72x/youtube_explode_dart"
+    branch: "hoytoba/playlist-lockup-fix"
+    reviewed_commit: "86cd5a97b6bad4e4907d04d8c167ab3b6ad943b0"
+    reviewed_at_utc: "2026-09-03T18:34:00Z"
+    role: "playlist-parser-fork"
+    relevant_changes:
+      - "playlist lockup extraction"
+
+  - repo: "isacRU11/youtube_explode_dart"
+    url: "https://github.com/isacRU11/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "75a7292284851c210fc7909ab6644cef058cfb16"
+    reviewed_at_utc: "2026-09-03T18:34:00Z"
+    role: "parser-fork"
+    relevant_changes:
+      - "dynamic JSON list casting"
+      - "video metadata paths"
+      - "numeric parsing hardening"
+
+  - repo: "luskan/youtube_explode_dart"
+    url: "https://github.com/luskan/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "f34c7d1858ded3de6cc4e979d1f33f6b1522b5d5"
+    reviewed_at_utc: "2026-09-03T18:35:00Z"
+    role: "maintenance-and-caption-reference"
+    relevant_changes:
+      - "repository documentation"
+      - "matching Android user agent for caption fetches"
+    notes:
+      - "The caption change reinforces client-to-resource header affinity."
+
+  - repo: "jngapp/youtube_explode_dart"
+    url: "https://github.com/jngapp/youtube_explode_dart"
+    branch: "master"
+    reviewed_commit: "6b3c58ec0b959599ef2d22653ca99c8ae382689b"
+    reviewed_at_utc: "2026-09-03T18:35:00Z"
+    role: "client-version-watch"
+    relevant_changes:
+      - "Android client and API key updates"
+    cautions:
+      - "Version changes require independent current validation."
+
+production_downstream_copies:
+  - repo: "gokadzev/Musify"
+    url: "https://github.com/gokadzev/Musify"
+    branch: "master"
+    reviewed_commit: "0285d0b63398317faa41c12d74388d204b1955a2"
+    relevant_change_commit: "ad9c95f12cae5b0f9ceb6ca4e96c77bb579a2d82"
+    reviewed_at_utc: "2026-09-03T18:36:00Z"
+    embedded_path: "packages/youtube_explode_dart"
+    role: "production-downstream-and-embedded-fork"
+    relevant_changes:
+      - "VisionOS default client"
+      - "client-specific headers on validation and media downloads"
+      - "headers propagated to fragments"
+      - "updated client status documentation"
+    cautions:
+      - "Its automatic header probing and extra fallback clients require separate design review."
+      - "Use as evidence for header-affinity defects, not as a wholesale dependency."
+
+  - repo: "souravkaushik-dev/chameleon"
+    url: "https://github.com/souravkaushik-dev/chameleon"
+    branch: "master"
+    reviewed_commit: "d20b589a6ad82b3486f3b88a7a8be0c487b0d147"
+    reviewed_at_utc: "2026-09-03T18:37:00Z"
+    role: "downstream-signal"
+    relevant_changes:
+      - "application-level YouTube stream/client work"
+    cautions:
+      - "Large app commit; extract only directly relevant evidence."
+
+watch_only:
+  - repo: "KRTirtho/youtube_explode_dart"
+    url: "https://github.com/KRTirtho/youtube_explode_dart"
+    branch: "master"
+    role: "historical-maintained-fork"
+    notes:
+      - "Useful for older related-video, signature, and collaboration fixes; not current enough for the 2026 VisionOS incident."
+
+  - repo: "krishnapalsendhav/youtube_explode_dart_plus"
+    url: "https://github.com/krishnapalsendhav/youtube_explode_dart_plus"
+    branch: "master"
+    role: "historical-feature-fork"
+    notes:
+      - "Useful for live-stream and channel experiments; validate against current upstream before use."
+
+  - repo: "5alafawyyy/youtube_explode_dart_plus"
+    url: "https://github.com/5alafawyyy/youtube_explode_dart_plus"
+    branch: "main"
+    role: "historical-modernisation-fork"
+    notes:
+      - "Large generated-code and package changes make protocol cherry-picks difficult."
+
+exclusions:
+  - pattern: "new fork with only upstream initial commit"
+    reason: "No independent maintenance signal."
+  - pattern: "mirror containing the same commit as another reviewed fork"
+    reason: "Not independent corroboration; group with its source."
+  - pattern: "application workaround without reproducible library-level evidence"
+    reason: "Downstream signal only."
