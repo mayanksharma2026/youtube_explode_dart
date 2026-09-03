@@ -418,24 +418,3 @@ class StreamClient {
             stream.source != StreamSource.adaptive) {
           assert(stream.audioTrack == null);
           yield MuxedStreamInfo(
-            videoId ?? watchPage!.videoId,
-            itag,
-            url,
-            container,
-            fileSize,
-            bitrate,
-            audioCodec!,
-            videoCodec!,
-            videoQuality.qualityString,
-            videoQuality,
-            videoResolution,
-            framerate,
-            stream.codec,
-          );
-          continue;
-        }
-
-        // Video only
-        yield VideoOnlyStreamInfo(
-          videoId ?? watchPage!.videoId,
-          itag,
