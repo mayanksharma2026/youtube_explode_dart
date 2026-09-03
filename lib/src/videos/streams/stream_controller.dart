@@ -5,11 +5,21 @@ import '../video_controller.dart';
 class StreamController extends VideoController {
   StreamController(super.httpClient);
 
-  Future<DashManifest> getDashManifest(String url) async {
-    return DashManifest.parse(await httpClient.getString(url));
+  Future<DashManifest> getDashManifest(
+    String url, {
+    Map<String, String> headers = const {},
+  }) async {
+    return DashManifest.parse(
+      await httpClient.getString(url, headers: headers),
+    );
   }
 
-  Future<HlsManifest> getHlsManifest(String url) async {
-    return HlsManifest.parse(await httpClient.getString(url));
+  Future<HlsManifest> getHlsManifest(
+    String url, {
+    Map<String, String> headers = const {},
+  }) async {
+    return HlsManifest.parse(
+      await httpClient.getString(url, headers: headers),
+    );
   }
 }
