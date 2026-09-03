@@ -37,11 +37,13 @@ For a client/403/PO-token incident, normally inspect in this order:
 
 Change the order when the failure is parser-specific or project-specific.
 
+For every high-signal repository, inspect not only code commits but also recent issues, PR descriptions, review threads, issue/PR comments, and discussions around the incident window. Important rollout observations and failed experiments often appear there before they are reflected in code. Treat comments as leads that still need reproducible or code-level corroboration.
+
 ## Dart fork ledger
 
 ### How this list was built
 
-For the 2026-09-04 review we searched GitHub for `youtube_explode_dart` forks/derivatives, compared activity against canonical upstream head `44a39a65` (2026-05-09), inspected incident branches, and grouped duplicate implementations.
+For the 2026-09-04 review we searched GitHub for `youtube_explode_dart` forks/derivatives, compared activity against canonical upstream head `44a39a65` (2026-05-09), inspected incident branches and discussion threads, and grouped duplicate implementations.
 
 A fork is labelled **active/divergent** when it has meaningful post-upstream work or a distinct maintained branch. A fork is **incident evidence** when it carries a fix/experiment directly relevant to the current failure. A **snapshot** may be recent but is not independent maintenance evidence.
 
@@ -80,10 +82,11 @@ Do not rely on this list unchanged.
 2. Search repositories for `youtube_explode_dart` and forks.
 3. Search recent commits across candidates, sorted by commit date.
 4. Inspect branches containing terms related to the incident (`403`, `stream`, `client`, `token`, `player`, `parser`, `playlist`, etc.).
-5. Compare each relevant branch against its upstream base.
-6. Group identical commit SHAs so duplicate forks do not create false confidence.
-7. Add newly active forks to the appropriate table with a dated note.
-8. Downgrade forks that have become stale or only mirror upstream.
+5. Read recent issue/PR comments, review threads and discussions for reported successes, regressions, region-specific behaviour and failed experiments.
+6. Compare each relevant branch against its upstream base.
+7. Group identical commit SHAs so duplicate forks do not create false confidence.
+8. Add newly active forks to the appropriate table with a dated note.
+9. Downgrade forks that have become stale or only mirror upstream.
 
 For an urgent outage, prioritise forks with a small reproducible delta and downstream reports, but still corroborate the underlying behaviour against at least one maintained cross-language implementation.
 
