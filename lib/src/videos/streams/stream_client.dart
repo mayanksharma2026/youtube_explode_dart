@@ -32,7 +32,7 @@ class StreamClient {
   ///
   /// See [YoutubeApiClient] for all the possible clients that can be set using the [ytClients] parameter.
   /// If [ytClients] is null the library automatically manages the clients, otherwise only the clients provided are used.
-  /// Currently by default the [YoutubeApiClient.visionOs] client is used,
+  /// Currently by default the  [YoutubeApiClient.androidSdkless] client is used,
   /// and if a js solver is provided the [YoutubeApiClient.safari] is used additionally.
   ///
   ///
@@ -65,7 +65,7 @@ class StreamClient {
         'ytClients cannot be an empty list');
 
     videoId = VideoId.fromString(videoId);
-    final clients = ytClients ?? [YoutubeApiClient.visionOs];
+    final clients = ytClients ?? [YoutubeApiClient.androidSdkless];
 
     if (_jsChallengeSolver != null && ytClients == null) {
       clients.add(YoutubeApiClient.safari);
@@ -418,3 +418,57 @@ class StreamClient {
             stream.source != StreamSource.adaptive) {
           assert(stream.audioTrack == null);
           yield MuxedStreamInfo(
+            videoId ?? watchPage!.videoId,
+            itag,
+            url,
+            container,
+            fileSize,
+            bitrate,
+            audioCodec!,
+            videoCodec!,
+            videoQuality.qualityString,
+            videoQuality,
+            videoResolution,
+            framerate,
+            stream.codec,
+          );
+          continue;
+        }
+
+        // Video only
+        yield VideoOnlyStreamInfo(
+          videoId ?? watchPage!.videoId,
+          itag,
+          url,
+          container,
+          fileSize,
+          bitrate,
+          videoCodec!,
+          videoQuality.qualityString,
+          videoQuality,
+          videoResolution,
+          framerate,
+          stream.fragments ?? const [],
+          stream.codec,
+        );
+        continue;
+        // Audio-only
+      } else if (!audioCodec.isNullOrWhiteSpace) {
+        yield AudioOnlyStreamInfo(
+            videoId ?? watchPage!.videoId,
+            itag,
+            url,
+            container,
+            fileSize,
+            bitrate,
+            audioCodec!,
+            stream.qualityLabel!,
+            stream.fragments ?? const [],
+            stream.codec,
+            stream.audioTrack);
+      } else {
+        throw YoutubeExplodeException('Could not extract stream codec');
+      }
+    }
+  }
+}
