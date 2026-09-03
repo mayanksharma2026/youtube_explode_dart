@@ -34,6 +34,42 @@ void main() {
     expect(manifest.streams.length, greaterThan(50));
   }, skip: skipGH);
 
+  test(
+    'VisionOS returns fetchable audio media',
+    () async {
+      final manifest = await yt!.videos.streams.getManifest(
+        VideoIdData.normal.id,
+        ytClients: [YoutubeApiClient.visionOs],
+      );
+
+      expect(manifest.audioOnly, isNotEmpty);
+
+      final firstChunk =
+          await yt!.videos.streams.get(manifest.audioOnly.first).first;
+      expect(firstChunk, isNotEmpty);
+    },
+    skip: skipGH,
+    timeout: const Timeout(Duration(seconds: 90)),
+  );
+
+  test(
+    'Default client strategy handles made-for-kids media',
+    () async {
+      final manifest =
+          await yt!.videos.streams.getManifest(VideoIdData.forKids.id);
+
+      expect(manifest.streams, isNotEmpty);
+
+      final streamInfo = manifest.muxed.isNotEmpty
+          ? manifest.muxed.first
+          : manifest.streams.first;
+      final firstChunk = await yt!.videos.streams.get(streamInfo).first;
+      expect(firstChunk, isNotEmpty);
+    },
+    skip: skipGH,
+    timeout: const Timeout(Duration(seconds: 90)),
+  );
+
   test('Stream of paid videos throw VideoRequiresPurchaseException', () {
     expect(
       yt!.videos.streams.getManifest(VideoIdData.requiresPurchase.id),
