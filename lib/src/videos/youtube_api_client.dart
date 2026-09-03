@@ -18,6 +18,8 @@ class YoutubeApiClient {
 
   // from https://github.com/yt-dlp/yt-dlp/blob/7794374de8afb20499b023107e2abfd4e6b93ee4/yt_dlp/extractor/youtube/_base.py#L136
   /// Has limited streams but doesn't require signature deciphering.
+  /// As of 2026-08, direct media URLs can require a GVS PO token and return
+  /// HTTP 403 when used without one.
   static final ios = YoutubeApiClient({
     'context': {
       'client': {
@@ -38,18 +40,17 @@ class YoutubeApiClient {
     },
   }, 'https://www.youtube.com/youtubei/v1/player?key=AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc&prettyPrint=false');
 
-  /// This provides also muxed streams but seems less reliable than [ios].
-  /// If you require an android client use [androidVr] instead.
-  /// Note: This client includes androidSdkVersion which may require PO Token.
-  /// Consider using [androidSdkless] instead for better compatibility.
+  /// Current Android client.
+  /// Direct adaptive streams can require a GVS PO token; this profile is kept
+  /// as a targeted compatibility fallback, not as the primary streaming client.
   static const android = YoutubeApiClient({
     'context': {
       'client': {
         'clientName': 'ANDROID',
-        'clientVersion': '20.10.38',
+        'clientVersion': '21.26.364',
         'androidSdkVersion': 30,
         'userAgent':
-            'com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip',
+            'com.google.android.youtube/21.26.364 (Linux; U; Android 11) gzip',
         'hl': 'en',
         'timeZone': 'UTC',
         'utcOffsetMinutes': 0,
@@ -60,9 +61,8 @@ class YoutubeApiClient {
   }, 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false');
 
   /// Android client without androidSdkVersion field.
-  /// This client doesn't require a PO Token and provides better compatibility
-  /// for streaming audio/video without 403 errors.
-  /// Based on yt-dlp's android_sdkless client.
+  /// Based on yt-dlp's historical android_sdkless client.
+  /// As of 2026-08, non-muxed media URLs can return HTTP 403.
   static const androidSdkless = YoutubeApiClient({
     'context': {
       'client': {
@@ -97,6 +97,8 @@ class YoutubeApiClient {
   }, 'https://music.youtube.com/youtubei/v1/player?key=AIzaSyAOghZGza2MQSZkY_zfZ370N-PUdXEo8AI&prettyPrint=false');
 
   /// Provides high quality videos (not only VR).
+  /// As of 2026-08, this client is affected by GVS PO-token enforcement for
+  /// direct media URLs and is no longer the preferred logged-out fallback.
   static const androidVr = YoutubeApiClient({
     'context': {
       'client': {
@@ -106,6 +108,33 @@ class YoutubeApiClient {
         'osVersion': '12',
         'osName': 'Android',
         'androidSdkVersion': '32',
+        'hl': 'en',
+        'timeZone': 'UTC',
+        'utcOffsetMinutes': 0,
+      },
+    },
+  }, 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false');
+
+  /// Apple Vision Pro compatibility profile.
+  ///
+  /// Current maintained extractors use this profile for logged-out streaming
+  /// because it returns progressive media without the GVS PO-token requirement
+  /// affecting the older Android VR and iOS defaults, and it doesn't require
+  /// JavaScript signature deciphering.
+  ///
+  /// Client identities are server-controlled and can change without notice.
+  static const visionOs = YoutubeApiClient({
+    'context': {
+      'client': {
+        'clientName': 'VISIONOS',
+        'clientVersion': '1.02',
+        'deviceMake': 'Apple',
+        'deviceModel': 'RealityDevice17,1',
+        'userAgent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_3) AppleWebKit/605.1.15 '
+            '(KHTML, like Gecko) Version/26.0 Safari/605.1.15',
+        'osName': 'visionOS',
+        'osVersion': '26.5.23O471',
         'hl': 'en',
         'timeZone': 'UTC',
         'utcOffsetMinutes': 0,
