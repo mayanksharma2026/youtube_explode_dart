@@ -6,8 +6,8 @@ This file records compatibility assumptions used by this fork. YouTube controls 
 
 | Profile | Role in this fork | Observed concern / requirement |
 | --- | --- | --- |
-| `visionOs` | Current default for logged-out stream manifests | At review time returned fetchable direct media without a GVS PO token and did not require JS signature solving. Known ecosystem limitation: VisionOS may not cover every content category (notably made-for-kids in some extractors). |
-| `androidSdkless` | Retained for explicit compatibility investigation | Previously the default. Direct non-muxed media became unreliable/403 under 2026 PO-token changes. Do not assume token-free operation. |
+| `visionOs` | Preferred explicit compatibility profile for the 2026 media-403 incident | At review time returned fetchable direct media without a GVS PO token and did not require JS signature solving. Known ecosystem limitation: VisionOS may not cover every content category (notably made-for-kids in some extractors). |
+| `androidSdkless` | Existing upstream default; retained while adoption remains explicit | Direct non-muxed media became unreliable/403 under 2026 PO-token changes. Do not assume token-free operation. |
 | `androidVr` | Explicit/legacy compatibility profile | 2026 ecosystem reports show GVS PO-token enforcement and direct media 403s. |
 | `ios` | Explicit/legacy compatibility profile | Player responses can succeed while direct media requires newer token handling and returns 403 without it. |
 | `safari` | Additional profile when a JS solver is configured | Web/Safari behaviour can involve JS challenges and evolving PO-token/session policy. |
@@ -40,6 +40,8 @@ A candidate default must have:
 7. documented content limitations;
 8. bounded fallback behaviour;
 9. a regression test that fails under the previous broken behaviour.
+
+Changing the library-wide implicit default should be a separate reviewed decision from merely adding a working client profile. This keeps a compatibility patch easier to upstream and lets consumers opt in explicitly while evidence is still evolving.
 
 ## Why not randomize profiles?
 
