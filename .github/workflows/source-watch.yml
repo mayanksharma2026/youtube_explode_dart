@@ -1,0 +1,67 @@
+name: Source intelligence watch
+
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/source-watch.yml'
+      - 'docs/maintenance-sources.yaml'
+      - 'docs/source-watch.md'
+      - 'tool/source_watch.py'
+      - 'tool/test_source_watch.py'
+      - 'tool/AGENTS.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-watch-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-intelligence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+
+      - name: Run deterministic tests
+        run: |
+          python -m unittest -v tool.test_source_watch
+          python -m py_compile tool/source_watch.py tool/test_source_watch.py
+
+      - name: Generate read-only source report
+        if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python tool/source_watch.py \
+            --registry docs/maintenance-sources.yaml \
+            --output-dir source-watch-report
+
+      - name: Publish workflow summary
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          if [[ -f source-watch-report/source-intelligence.md ]]; then
+            cat source-watch-report/source-intelligence.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Source report was not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload source report
+        if: always() && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: source-intelligence-${{ github.run_id }}
+          path: source-watch-report/
+          if-no-files-found: warn
+          retention-days: 30

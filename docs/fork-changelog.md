@@ -9,6 +9,7 @@ This file records behaviour that differs from `Hexer10/youtube_explode_dart`. Ke
 - Added repository- and folder-level agent guidance.
 - Added a machine-readable maintenance source registry and comparative Dart fork survey.
 - Added a phased incident/research/design workflow and client-profile status record.
+- Added a dependency-free, read-only source-intelligence tool and weekly/manual workflow that compares registered reviewed revisions with current GitHub branch heads and publishes Markdown/JSON reports.
 
 ### Proposed stream compatibility change
 
@@ -17,4 +18,4 @@ This file records behaviour that differs from `Hexer10/youtube_explode_dart`. Ke
 - Preserve client-specific media headers through validation, range downloads, fragments, HLS, and refresh.
 - Add deterministic transport tests and live media-byte regressions.
 
-The proposed stream change is tracked separately from this documentation PR until implementation and validation are complete.
+The proposed stream change is tracked separately from the documentation and maintenance PRs until implementation and validation are complete.

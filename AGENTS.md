@@ -11,6 +11,7 @@ Read this file first. Before editing a subtree, also read the nearest folder-lev
 - [`lib/src/videos/AGENTS.md`](lib/src/videos/AGENTS.md) — player profiles, video APIs, manifests, and stream selection.
 - [`lib/src/reverse_engineering/AGENTS.md`](lib/src/reverse_engineering/AGENTS.md) — HTTP, pages, manifests, and challenge solving.
 - [`test/AGENTS.md`](test/AGENTS.md) — deterministic and live regression tests.
+- [`tool/AGENTS.md`](tool/AGENTS.md) — read-only source intelligence, registry parsing, and report automation.
 
 All folders without a local guide inherit this file and the nearest parent guide. Do not add an `AGENTS.md` to every leaf folder. Add one only when a subtree has materially different rules.
 
@@ -39,6 +40,7 @@ Relevant context:
 - Source registry: [`docs/maintenance-sources.yaml`](docs/maintenance-sources.yaml)
 - Human-readable source guide: [`docs/upstream-sources.md`](docs/upstream-sources.md)
 - Dart fork survey: [`docs/fork-survey.md`](docs/fork-survey.md)
+- Read-only source watcher: [`docs/source-watch.md`](docs/source-watch.md)
 
 Do not treat any working client profile as permanent.
 
@@ -49,6 +51,7 @@ Do not treat any working client profile as permanent.
 - `lib/src/reverse_engineering/`: transport, watch/player pages, manifests, heuristics, and JS challenge integration.
 - `lib/src/search/`, `lib/src/channels/`, `lib/src/playlists/`: feature-specific parsers and continuation flows.
 - `test/`: unit tests plus opt-in live YouTube tests.
+- `tool/`: dependency-free, read-only source intelligence and its deterministic tests.
 - `docs/`: operations, incident response, source map, fork survey, profile status, release process, and decisions.
 
 ## Non-negotiable engineering rules
@@ -67,6 +70,7 @@ Do not treat any working client profile as permanent.
 12. **Preserve public API compatibility unless deliberately versioned.** Avoid deleting profiles simply because they are temporarily unhealthy.
 13. **Keep fork-only changes easy to rebase.** Protocol hotfixes must have narrow diffs and clear provenance.
 14. **State uncertainty precisely.** Write “observed on 2026-09-03” rather than “never requires a token”.
+15. **Automation reports; maintainers decide.** Source monitoring may compare registered revisions and produce artefacts, but must never cherry-pick, merge, modify the registry, or open protocol changes automatically.
 
 ## Required workflow for a YouTube breakage
 
@@ -100,7 +104,16 @@ Do not label every 403 as rate limiting. Distinguish 403, 429, authentication, g
 
 ### 3. Review the source registry
 
-Read [`docs/maintenance-sources.yaml`](docs/maintenance-sources.yaml), [`docs/upstream-sources.md`](docs/upstream-sources.md), and [`docs/fork-survey.md`](docs/fork-survey.md). Refresh stale commit references and add newly relevant maintained forks.
+Read [`docs/maintenance-sources.yaml`](docs/maintenance-sources.yaml), [`docs/upstream-sources.md`](docs/upstream-sources.md), [`docs/fork-survey.md`](docs/fork-survey.md), and the latest source-watch report when available. Refresh stale commit references and add newly relevant maintained forks.
+
+Run the read-only source comparison when useful:
+
+```bash
+python -m unittest -v tool.test_source_watch
+python tool/source_watch.py \
+  --registry docs/maintenance-sources.yaml \
+  --output-dir source-watch-report
+```
 
 At minimum, compare:
 
@@ -110,7 +123,7 @@ At minimum, compare:
 - `LuanRT/YouTube.js` for TypeScript InnerTube behaviour;
 - maintained Dart forks and production embedded copies listed in the registry.
 
-Use exact commits or permanent links in the issue/PR. A downstream app can confirm impact but is not, by itself, a protocol source of truth.
+Use exact commits or permanent links in the issue/PR. A downstream app can confirm impact but is not, by itself, a protocol source of truth. A changed source-watch head is a queue item for analysis, not an approved fix.
 
 ### 4. Write the failing regression first
 
@@ -151,6 +164,7 @@ Follow [`docs/release-process.md`](docs/release-process.md). Consumers must pin 
 - Never weaken an assertion merely to accommodate an unexplained server change.
 - Never commit signed stream URLs; they expire and may contain tracking data.
 - A media-access fix is incomplete unless at least one test reads real bytes.
+- Source-watch network access must be outside deterministic unit tests and must never execute downloaded code.
 
 ## Pull-request standard
 
