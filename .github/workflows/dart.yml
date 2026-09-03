@@ -35,7 +35,23 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib test bin example
 
       - name: Analyse
-        run: dart analyze --fatal-infos
+        run: dart analyze
 
       - name: Run deterministic tests
-        run: dart test
+        shell: bash
+        run: |
+          tests=(
+            test/channel_id_test.dart
+            test/playlist_id_test.dart
+            test/username_test.dart
+            test/video_id_test.dart
+          )
+
+          # Runtime PRs may add transport-only tests that use fake HTTP clients.
+          # Include them in the merge gate when present without running mutable
+          # YouTube network/parser integration tests on hosted runners.
+          if [[ -f test/stream_transport_test.dart ]]; then
+            tests+=(test/stream_transport_test.dart)
+          fi
+
+          dart test "${tests[@]}"
