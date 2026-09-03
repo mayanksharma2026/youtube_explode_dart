@@ -15,7 +15,7 @@ This repository is a maintained fork of [Hexer10/youtube_explode_dart](https://g
 
 ## Current compatibility note
 
-The fork currently uses the VisionOS InnerTube profile for the default logged-out stream-manifest path. This was introduced after previously useful Android/iOS profiles began returning HTTP 403 for direct media under newer PO-token enforcement. This is a time-sensitive compatibility choice, not a stable YouTube API contract; see [`docs/client-profiles.md`](docs/client-profiles.md).
+The fork includes a VisionOS InnerTube profile for logged-out stream resolution. It was introduced after previously useful Android/iOS profiles began returning HTTP 403 for direct media under newer PO-token enforcement. Client selection remains explicit in this baseline patch so applications can adopt the profile deliberately and upstream behaviour is not changed globally. This is a time-sensitive compatibility option, not a stable YouTube API contract; see [`docs/client-profiles.md`](docs/client-profiles.md).
 
 ---
 
@@ -69,7 +69,7 @@ final videoStreams = manifest.videoOnly;
 final muxedStreams = manifest.muxed;
 ```
 
-To explicitly test a client profile:
+To use the VisionOS compatibility profile explicitly:
 
 ```dart
 final manifest = await yt.videos.streams.getManifest(
