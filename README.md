@@ -127,8 +127,8 @@ Choose a stream:
 final audio = manifest.audioOnly.withHighestBitrate();
 final video = manifest.videoOnly
     .where((stream) => stream.container == StreamContainer.mp4)
-    .withHighestVideoQuality();
-final muxed = manifest.muxed.withHighestVideoQuality();
+    .bestQuality;
+final muxed = manifest.muxed.bestQuality;
 ```
 
 Download the selected stream:
