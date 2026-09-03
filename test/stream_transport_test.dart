@@ -4,8 +4,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:test/test.dart';
-import 'package:youtube_explode_dart/src/reverse_engineering/models/fragment.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+
+import '../lib/src/reverse_engineering/models/fragment.dart';
 
 void main() {
   group('YoutubeApiClient media identity', () {
