@@ -34,6 +34,29 @@ void main() {
     expect(manifest.streams.length, greaterThan(50));
   }, skip: skipGH);
 
+  test(
+    'Get a fetchable manifest with the visionOs client',
+    () async {
+      final manifest = await yt!.videos.streams.getManifest(
+        VideoIdData.normal.id,
+        ytClients: const [YoutubeApiClient.visionOs],
+      );
+
+      expect(manifest.audioOnly, isNotEmpty);
+      expect(manifest.videoOnly, isNotEmpty);
+
+      final audioBytes =
+          await yt!.videos.streams.get(manifest.audioOnly.first).first;
+      final videoBytes =
+          await yt!.videos.streams.get(manifest.videoOnly.first).first;
+
+      expect(audioBytes, isNotEmpty);
+      expect(videoBytes, isNotEmpty);
+    },
+    skip: skipGH,
+    timeout: const Timeout(Duration(seconds: 90)),
+  );
+
   test('Stream of paid videos throw VideoRequiresPurchaseException', () {
     expect(
       yt!.videos.streams.getManifest(VideoIdData.requiresPurchase.id),
