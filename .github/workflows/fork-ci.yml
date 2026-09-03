@@ -1,0 +1,48 @@
+name: Fork CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Check whitespace
+        run: git diff --check
+
+      - name: Analyze
+        run: dart analyze
+
+      - name: Test
+        run: dart test --reporter=expanded
+
+      - name: Explain live-test coverage
+        if: always()
+        run: |
+          echo "YouTube network tests are skipped on GitHub-hosted runners by test/skip_gh.dart."
+          echo "Run tool/verify_visionos.dart from a representative network before release."
