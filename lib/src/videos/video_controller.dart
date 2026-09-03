@@ -18,10 +18,26 @@ class VideoController {
     YoutubeApiClient client, {
     WatchPage? watchPage,
   }) async {
+    final rawContext = client.payload['context'];
+    if (rawContext is! Map) {
+      throw ArgumentError.value(
+        client.payload,
+        'client.payload',
+        'The client payload must contain a context map.',
+      );
+    }
+    final rawClientContext = rawContext['client'];
+    if (rawClientContext is! Map) {
+      throw ArgumentError.value(
+        client.payload,
+        'client.payload',
+        'The client payload must contain a context.client map.',
+      );
+    }
+
     final payload = Map<String, dynamic>.from(client.payload);
-    final context = Map<String, dynamic>.from(payload['context'] as Map);
-    final clientContext =
-        Map<String, dynamic>.from(context['client'] as Map);
+    final context = Map<String, dynamic>.from(rawContext);
+    final clientContext = Map<String, dynamic>.from(rawClientContext);
     context['client'] = clientContext;
     payload['context'] = context;
 
@@ -85,11 +101,11 @@ class VideoController {
       return _visitorData!;
     }
 
+    final userAgent = client.mediaRequestHeaders['User-Agent'];
     var response = await http.getString(
       'https://www.youtube.com/sw.js_data',
       headers: {
-        if (client.mediaRequestHeaders['User-Agent'] case final userAgent?)
-          'User-Agent': userAgent,
+        if (userAgent != null) 'User-Agent': userAgent,
         'Content-Type': 'application/json',
       },
     );
