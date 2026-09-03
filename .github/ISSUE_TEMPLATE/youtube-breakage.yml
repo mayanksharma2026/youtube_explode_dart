@@ -1,0 +1,153 @@
+name: YouTube extraction breakage
+description: Report a reproducible metadata, player, manifest, signature or media-delivery regression
+title: "[YouTube breakage]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provide a minimal reproduction and identify the first failing layer. Never include cookies, authorisation headers, PO tokens, visitor data or complete signed media URLs.
+
+  - type: input
+    id: first_observed
+    attributes:
+      label: First observed
+      description: Include date, time and timezone.
+      placeholder: 2026-09-03 21:30 IST
+    validations:
+      required: true
+
+  - type: input
+    id: package_revision
+    attributes:
+      label: Package revision
+      description: Exact Git commit SHA or immutable tag. Do not write only "latest".
+      placeholder: commit SHA or tag
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Dart/Flutter version, OS/device, app or CLI runtime, network type and country/region.
+      placeholder: |
+        Dart/Flutter:
+        OS/device:
+        Runtime:
+        Network/region:
+    validations:
+      required: true
+
+  - type: dropdown
+    id: failure_layer
+    attributes:
+      label: First failing layer
+      options:
+        - Metadata, search, channel or playlist
+        - Watch page or player request
+        - Playability response
+        - Manifest or format parsing
+        - Signature or n transformation
+        - Media URL or content-length access
+        - HLS/DASH manifest or fragment
+        - Rate limiting or intermittent transport
+        - Unknown
+    validations:
+      required: true
+
+  - type: input
+    id: clients
+    attributes:
+      label: Selected YouTube client profile(s)
+      description: Include exact Dart names and order.
+      placeholder: YoutubeApiClient.visionOs
+    validations:
+      required: true
+
+  - type: textarea
+    id: video_cases
+    attributes:
+      label: Public test cases
+      description: Add at least one public video ID/URL and identify its content class. Do not add private or paid content.
+      placeholder: |
+        Video ID/URL:
+        Content class: public VOD / live / made for kids / region restricted / other
+        Reproduces consistently: yes/no
+    validations:
+      required: true
+
+  - type: textarea
+    id: minimal_reproduction
+    attributes:
+      label: Minimal Dart reproduction
+      description: Remove application UI, state management, caches, proxies and unrelated retries.
+      render: dart
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error and safe diagnostics
+      description: Include exception type, stable message fragment, HTTP status, itag/stream class and request method. Redact complete signed URLs and session data.
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: manifest_result
+    attributes:
+      label: Did manifest resolution succeed?
+      options:
+        - "Yes"
+        - "No"
+        - Not applicable
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: media_bytes
+    attributes:
+      label: Were actual media bytes retrieved?
+      description: A non-empty manifest alone is not proof of stream availability.
+      options:
+        - "Yes"
+        - "No"
+        - Not tested
+        - Not applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: comparison
+    attributes:
+      label: Cross-project research
+      description: Link relevant current issues/commits from Dart upstream, yt-dlp, YoutubeExplode, NewPipeExtractor, YouTube.js or another implementation. Note any authentication/token/proxy assumptions.
+      placeholder: |
+        Source:
+        Link:
+        Relevant behaviour:
+        Licence checked:
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Region differences, intermittency, request counts, recent dependency changes or other evidence.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Safety and reproduction checklist
+      options:
+        - label: I reproduced this with a minimal Dart program.
+          required: true
+        - label: I tested a public video that plays in a logged-out browser where applicable.
+          required: true
+        - label: I included the exact package commit/tag and client profile.
+          required: true
+        - label: I removed cookies, tokens, visitor data, authorisation and complete signed media URLs.
+          required: true
+        - label: I searched existing issues, pull requests and recent upstream changes.
+          required: true
