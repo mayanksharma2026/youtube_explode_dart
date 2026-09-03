@@ -21,11 +21,33 @@ class VideoController {
     assert(payload['context']!['client'] != null,
         'client must contain a context.client');
 
-    final userAgent = payload['context']!['client']!['userAgent'] as String?;
+    // Client profiles are shared static objects. Copy the request-scoped maps
+    // before adding visitor data so a request can never mutate the profile.
+    final context = Map<String, dynamic>.from(
+      payload['context'] as Map<String, dynamic>,
+    );
+    final clientContext = Map<String, dynamic>.from(
+      context['client'] as Map<String, dynamic>,
+    );
+    context['client'] = clientContext;
+
+    final userAgent = clientContext['userAgent'] as String?;
+    final clientName = clientContext['clientName'] as String?;
     final ytCfg = watchPage?.ytCfg;
+
+    var visitorData = _getVisitorDataFromWatchPage(ytCfg);
+    if ((visitorData == null || visitorData.isEmpty) &&
+        _shouldResolveVisitorData(clientName) &&
+        userAgent != null) {
+      visitorData = await _extractVisitorData(httpClient, userAgent);
+    }
+    if (visitorData != null && visitorData.isNotEmpty) {
+      clientContext['visitorData'] = visitorData;
+    }
 
     final body = {
       ...payload,
+      'context': context,
       'videoId': videoId.value,
       if (ytCfg?.containsKey('STS') ?? false)
         'playbackContext': {
@@ -35,22 +57,16 @@ class VideoController {
           }
         }
     };
-    if (body['context']!['client']['clientName'] == 'IOS') {
-      body['context']!['client']!['visitorData'] =
-          await _extractVisitorData(httpClient, client);
-    }
 
     final content = await httpClient.postString(
       client.apiUrl,
       body: body,
       headers: {
         if (userAgent != null) 'User-Agent': userAgent,
-        'X-Youtube-Client-Name': payload['context']!['client']!['clientName'],
-        'X-Youtube-Client-Version':
-            payload['context']!['client']!['clientVersion'],
-        if (ytCfg != null)
-          'X-Goog-Visitor-Id': ytCfg['INNERTUBE_CONTEXT']['client']
-              ['visitorData'],
+        if (clientName != null) 'X-Youtube-Client-Name': clientName,
+        'X-Youtube-Client-Version': clientContext['clientVersion'].toString(),
+        if (visitorData != null && visitorData.isNotEmpty)
+          'X-Goog-Visitor-Id': visitorData,
         'Origin': 'https://www.youtube.com',
         'Sec-Fetch-Mode': 'navigate',
         'Content-Type': 'application/json',
@@ -63,15 +79,29 @@ class VideoController {
 
   String? _visitorData;
 
+  bool _shouldResolveVisitorData(String? clientName) =>
+      clientName == 'VISIONOS' || clientName == 'ANDROID' || clientName == 'IOS';
+
+  String? _getVisitorDataFromWatchPage(Map<String, dynamic>? ytCfg) {
+    final innertubeContext = ytCfg?['INNERTUBE_CONTEXT'];
+    if (innertubeContext is! Map) return null;
+
+    final client = innertubeContext['client'];
+    if (client is! Map) return null;
+
+    final value = client['visitorData'];
+    return value is String && value.isNotEmpty ? value : null;
+  }
+
   Future<String> _extractVisitorData(
-      YoutubeHttpClient http, YoutubeApiClient client) async {
+      YoutubeHttpClient http, String userAgent) async {
     if (_visitorData != null) {
       return _visitorData!;
     }
 
     var response =
         await http.getString('https://www.youtube.com/sw.js_data', headers: {
-      'User-Agent': client.payload['context']['client']['userAgent']!,
+      'User-Agent': userAgent,
       'Content-Type': 'application/json',
     });
 
@@ -81,6 +111,9 @@ class VideoController {
 
     final data = json.decode(response) as List<dynamic>;
     final value = data[0][2][0][0][13];
+    if (value is! String || value.isEmpty) {
+      throw YoutubeExplodeException('Failed to resolve visitor data.');
+    }
 
     return _visitorData = value;
   }
