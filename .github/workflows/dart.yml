@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - docs/maintenance-framework
   pull_request:
   workflow_dispatch:
 
