@@ -131,3 +131,15 @@ Only the tracked branch is corrected to `main`. The reviewed code revision
 `d20b589a6ad82b3486f3b88a7a8be0c487b0d147`, its review date, and the original survey
 snapshot remain unchanged. This is a branch-metadata verification, not a renewed
 protocol review or endorsement of the newer downstream changes.
+
+## 2026-09-16 regular maintenance follow-up
+
+The [verified maintenance plan](maintenance-plans/2026-09-16-regular-maintenance.md) contains the complete 24-source inventory, exact before/current revisions, review depth, decisions and validation limitations. Initial head comparison found 12 equal checkpoints, 9 mismatches and 3 sources without reviewed checkpoints. One mismatch was Lydonator's incorrectly tracked branch; after the provenance corrections, eight sources have genuine forward ranges. Head refresh is not blanket approval of newer implementations.
+
+- Lydonator's reviewed PR #389 commit `f6c104c8a0efe3e7bb9e3f859ca4addc45ad5926` remains on `add-visionos-client`; its default `master` points to the canonical upstream baseline. Track the feature branch without changing its historical review date. Closed PR #391 carries that same commit and is not independent evidence.
+- Jameszhou's invalid stored `cbe63502884da2fa0f0f09a9784fa831ab5867` is corrected to the resolved historical `cbe63502884da2fa0afc0f09a9784fa831ab5867`, not advanced to current `a1ce972191d13a257e21394bcb4bd4268b4a2b75`. The newer About/header parser fix needs exact fixtures and locale/contract review; the separate Streams-tab/filtering/generated-file changes are not imported.
+- yt-dlp's new embedded-player UA change does not map to an existing Dart profile. NewPipe's new commit is a Java dependency update. YouTube.js feature additions, Invidious per-request headers, and downstream media-affinity work remain separately classified in the plan rather than bundled into a protocol patch.
+- Musify's embedded package has no delta in the reviewed range; its audio-selection change is app policy. Chameleon's selected probe code passes client headers but also changes defaults; neither app is imported wholesale.
+- The provider's [2.0.0 security release](https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/tag/2.0.0) is relevant to any future PO-token integration review, not a vulnerability claim or dependency update for this package.
+
+The fork already implements the VisionOS profile/default at the audited base, but the full media-header lifecycle and fresh playback validation remain outstanding. See [client profiles](client-profiles.md) and the appended [ADR audit](decisions/0001-visionos-default-client.md). The regular maintenance PR changes only metadata, tests and documentation; it does not repair or endorse the remaining runtime gaps.

@@ -1,19 +1,28 @@
 # InnerTube Client Profile Status
 
-**Last reviewed:** 2026-09-03 UTC  
-**Protocol reference:** `yt-dlp/yt-dlp@bbc809a1161d3bfca51fa36f59dda35556ee85a0`
+**Protocol observation snapshot:** 2026-09-03 UTC
 
-Client status is observational and date-bound. YouTube may change enforcement by account, network, region, format, or experiment.
+**Historical protocol reference:** `yt-dlp/yt-dlp@bbc809a1161d3bfca51fa36f59dda35556ee85a0`
 
-| Dart profile | Observed status | Default use | Required validation |
+**Implementation audit:** 2026-09-16 UTC, base `b1cef42590420b0b8dd1707f37c1cd9598eaf19c`.
+
+The protocol observations below retain their 2026-09-03 date; the default-use column reflects the audited code. This is not fresh live-playback validation. YouTube may change enforcement by account, network, region, format, or experiment.
+
+| Dart profile | Historical protocol observations | Default use at audited base | Required validation |
 | --- | --- | --- | --- |
-| `visionOs` | Candidate logged-out/no-JS profile; current reference implementations use it without a configured GVS PO-token requirement. Made-for-kids content may be unavailable. | Proposed primary profile for this fork. | Player response, representative audio/video range, download path, and known limitation. |
+| `visionOs` | Candidate logged-out/no-JS profile; current reference implementations use it without a configured GVS PO-token requirement. Made-for-kids content may be unavailable. | Already implemented as the primary default when `ytClients` is omitted. | Player response, representative audio/video range, download path, and known limitation. |
 | `androidVr` | All formats were reported 403 with the then-current profile from 2026-08-17; current references no longer use it as the anonymous default. | Do not use as automatic fallback without fresh evidence. | Real bytes for each required protocol. |
 | `ios` | Current reference policy marks media access as requiring/recommending PO-token support depending on protocol/context. | Explicit only. | Player and media tokens/headers; real bytes. |
-| `android` | Current reference policy requires GVS PO-token support for HTTPS/DASH unless an applicable player token exemption exists. | Explicit only. | Token policy and real bytes. |
+| `android` | Current reference policy requires GVS PO-token support for HTTPS/DASH unless an applicable player token exemption exists. | Explicit selection or classified compatibility fallback after primary failure. | Token policy and real bytes. |
 | `androidSdkless` | Historical workaround; observed returning inaccessible non-muxed URLs in the current incident. | Retain for source compatibility; not default. | Fresh independent evidence before reuse. |
-| `safari`/web | May require player JS and current PO-token handling for broad format access. HLS availability can depend on session trust. | Add only when a configured JS/token path justifies it. | Challenge solution, token policy, formats, and bytes. |
-| `tv` | Existing restricted-content fallback with separate embedding/signature limitations. | Keep existing bounded fallback pending a dedicated review. | Playability, signature, embedding, and media bytes. |
+| `safari`/web | May require player JS and current PO-token handling for broad format access. HLS availability can depend on session trust. | Added when a JS solver is configured and `ytClients` is omitted; this does not provide PO-token support. | Challenge solution, token policy, formats, and bytes. |
+| `tv` | Existing restricted-content fallback with separate embedding/signature limitations. | Compatibility fallback after eligible Android failure; also available explicitly. | Playability, signature, embedding, and media bytes. |
+
+## Implementation is not completed media validation
+
+The audited base already contains the VisionOS profile/default and request-scoped client-context copying. It does **not** complete the resource-affinity requirements below: the manifest HEAD probe lacks producing-client headers, normal range/fragment requests accept but do not apply supplied headers, and HLS/URL refresh need an end-to-end producing-client review. The player client-name header also needs a separate symbolic/numeric identity review.
+
+The [regular maintenance plan](maintenance-plans/2026-09-16-regular-maintenance.md) records exact source revisions, deferred work and unavailable local Dart/network gates. No new runtime fix or fresh audio/video byte result is claimed. The existence of a default in code does not establish that all default-selection acceptance criteria have passed. See the appended audit in [ADR 0001](decisions/0001-visionos-default-client.md).
 
 ## Profile coherence
 
