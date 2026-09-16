@@ -180,3 +180,41 @@ Revisions made during review: restricted approval to metadata/tests/documentatio
 Remaining assumptions: current server health, complete downstream implementation correctness and full local Dart validation remain unresolved, with validation steps above. These block runtime changes and ready-for-review promotion, not the two deterministic metadata corrections.
 
 Final status: **VERIFIED** for this bounded maintenance plan. Overall execution/merge readiness is not verified and the PR must remain Draft while mandatory gates are blocked.
+
+## Implementation Verification
+
+Verification timestamp: **2026-09-16T20:06:33Z**. Implementation HEAD: `ec780369e229cb5f224117332e02ef3f4b3dfd13`.
+
+Commit sequence:
+
+- `05b303d2958569a8aa88a4794f24044333d63cb1`: source intelligence and VERIFIED plan, before implementation.
+- `7d3e884512350251f67485d6dd6941c63b681eb3`: two failing registry regressions; the original nine tests still pass.
+- `ec780369e229cb5f224117332e02ef3f4b3dfd13`: provenance corrections and aligned documentation.
+
+This verification record is a subsequent documentation-only commit. The PR's final Maintainer self-review must pin the final HEAD including this record; a document cannot contain its own commit hash.
+
+| Acceptance criterion | Result |
+| --- | --- |
+| A1 | PASS: all 24 registrations present with exact observed refs, roles, branch configuration, review depth and mirror de-duplication. |
+| A2 | PASS: upstream is unchanged, base divergence is 18 ahead / 0 behind, and no sync/external write occurred. |
+| A3 | PASS: 11 tests ran before correction with exactly two intended failures; all 11 pass after correction. Original test-function ASTs are unchanged. |
+| A4 | PASS: parsed-registry comparison finds exactly the Lydonator branch and Jameszhou historical SHA corrections. Per-source dates, ordering, roles and unreviewed entries are preserved. Overall audit date/comment are explicitly scoped. |
+| A5 | PASS: client profiles and changelog distinguish already-implemented defaults from missing media affinity/live evidence; ADR bytes preserve the original as a prefix and append the audit. |
+| A6 | PASS for implementation scope: GitHub base-to-implementation comparison reports exactly seven planned files, no library/tool implementation/dependency/generated/workflow changes, and no unrelated import. The remote PR review remains a separate gate. |
+| A7 | PASS for available deterministic checks; BLOCKED for mandatory full local Dart and network report gates, as detailed below. |
+| A8 | PR-stage gate: creation, complete remote diff/check/comment review and final-head self-review are recorded on the subsequent Draft PR. No merge is authorized. |
+
+Validation results:
+
+- `python -m unittest -v tool.test_source_watch`: **11 passed** after correction; baseline 9 passed; regression-first run had exactly 2 intended failures out of 11.
+- `python -m py_compile tool/source_watch.py tool/test_source_watch.py`: **passed**.
+- `git diff --check`: **passed** in a throwaway partial audit Git repository containing exactly the seven changed files and verified baseline bytes. This is not a claim of a successful full origin checkout.
+- The tested Python/registry bytes match their GitHub blob hashes (`51829a7e6c0c776436d55a33def146dc1c092374` and `2450b6ae5dfa6abfed35e248afc636222346eed0`). Existing tests were not weakened.
+- Required local Dart commands: **blocked**, each exit 127 (`dart: command not found`). Full clone/fetch was blocked by GitHub DNS resolution. Authorized remote workstation access reported no available device.
+- Actual source-watch CLI: **failed**, exit 1, 24 DNS errors; both report artifacts were generated. Connector-assisted ref resolution succeeded for all 24 and is not labelled a successful CLI execution.
+- Live/media validation: **not run**; no runtime change or fresh playback claim. Deferred transport/default work still requires actual audio/video bytes and its lifecycle matrix.
+- Baseline GitHub Dart CI was successful. PR CI is not claimed to pass before GitHub reports results; its actual status belongs in the final PR review comment.
+
+Known limitations: no full local Dart checkout/SDK, no successful network CLI report, no fresh media-byte evidence, and explicitly partial large-downstream reviews. The metadata corrections are validated; these limitations must not be hidden by green selected CI tests.
+
+Final verification status: **BLOCKED for complete maintenance validation / ready-for-review promotion**. The bounded metadata/tests/documentation implementation passes available checks; retain the PR as Draft and leave merge/independent approval to a separate maintainer decision.
