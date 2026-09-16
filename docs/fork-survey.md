@@ -117,3 +117,17 @@ Contains course-playlist/channel-ID and CORS-proxy changes. The parser change ma
 5. Do not add randomised fingerprints, versions, user agents, timing, or proxy rotation. Coherent identities and transparent health-based fallback are safer and easier to review.
 6. Keep HLS exposure, invalid URL handling, and parser migrations as independent follow-up work with their own tests and PRs.
 7. Refresh this survey and source registry on every YouTube incident and at least before each fork release.
+
+## 2026-09-16 branch-metadata correction
+
+For `souravkaushik-dev/chameleon`, GitHub repository metadata identified `main`
+as the default branch. The `commits/master` endpoint returned HTTP 422
+(`No commit found for SHA: master`), while `commits/main` resolved to
+[`9360b48dc4f08ab14329a57da6b2d23f9f4ab48a`](https://github.com/souravkaushik-dev/chameleon/commit/9360b48dc4f08ab14329a57da6b2d23f9f4ab48a).
+The source registry's incorrect `master` entry caused the single lookup error in
+[watch run 34825002484](https://github.com/mayanksharma2026/youtube_explode_dart/actions/runs/34825002484).
+
+Only the tracked branch is corrected to `main`. The reviewed code revision
+`d20b589a6ad82b3486f3b88a7a8be0c487b0d147`, its review date, and the original survey
+snapshot remain unchanged. This is a branch-metadata verification, not a renewed
+protocol review or endorsement of the newer downstream changes.

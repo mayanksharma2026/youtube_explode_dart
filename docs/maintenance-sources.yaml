@@ -299,7 +299,8 @@ production_downstream_copies:
 
   - repo: "souravkaushik-dev/chameleon"
     url: "https://github.com/souravkaushik-dev/chameleon"
-    branch: "master"
+    # Branch verified 2026-09-16; code-review snapshot below is unchanged.
+    branch: "main"
     reviewed_commit: "d20b589a6ad82b3486f3b88a7a8be0c487b0d147"
     reviewed_at_utc: "2026-09-03T18:37:00Z"
     role: "downstream-signal"
