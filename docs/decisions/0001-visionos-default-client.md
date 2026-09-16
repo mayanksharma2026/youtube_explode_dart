@@ -60,3 +60,11 @@ Deferred. It requires a separate architecture, API, security, privacy, deploymen
 ## Revalidation trigger
 
 Any sustained 403/429 increase, missing required stream type, change in reference default clients/token policy, or consumer playback failure opens a new incident and requires this decision to be revisited.
+
+## 2026-09-16 implementation audit (partial implementation, validation outstanding)
+
+Base audited: `b1cef42590420b0b8dd1707f37c1cd9598eaf19c`. The historical proposal above is retained unchanged. The VisionOS profile/default, classified Android/TV compatibility fallback, and request-scoped client-context copying are already present in code.
+
+The complete decision is **not** recorded as implemented or validated. The manifest probe and ordinary range/fragment paths still lack producing-client header propagation; HLS and refresh require full lifecycle review. No fresh audio/video byte validation or full local Dart result was available during this maintenance run. Historical references to a healthy profile or gained transport association above are not a current health guarantee.
+
+The [regular maintenance plan](../maintenance-plans/2026-09-16-regular-maintenance.md) records the exact evidence, source comparisons, rejected imports and blocked gates. This cycle makes no runtime change. A dedicated, regression-first transport PR with actual media bytes is required before marking this ADR fully implemented; no fallback or public API change is authorized by this audit.
