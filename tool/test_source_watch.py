@@ -97,6 +97,33 @@ second:
         self.assertEqual(len(sources), 1)
         self.assertEqual(sources[0].branch, "main")
 
+    def test_lydonator_registry_tracks_reviewed_pr_branch(self) -> None:
+        # PR #389's reviewed commit is on this branch, not upstream-only master.
+        # Revisit this guard with evidence when the PR merges or branch changes.
+        registry = (
+            pathlib.Path(__file__).resolve().parents[1]
+            / "docs/maintenance-sources.yaml"
+        )
+        sources = [
+            source
+            for source in parse_registry(registry)
+            if source.repo == "lydonator/youtube_explode_dart"
+        ]
+        self.assertEqual(len(sources), 1)
+        self.assertEqual(sources[0].branch, "add-visionos-client")
+
+    def test_reviewed_registry_revisions_are_full_commit_shas(self) -> None:
+        # The historical Jameszhou checkpoint had two missing SHA characters.
+        # Validate real provenance without restricting synthetic parser fixtures.
+        registry = (
+            pathlib.Path(__file__).resolve().parents[1]
+            / "docs/maintenance-sources.yaml"
+        )
+        for source in parse_registry(registry):
+            if source.reviewed_commit:
+                with self.subTest(repo=source.repo, branch=source.branch):
+                    self.assertRegex(source.reviewed_commit, r"\A[0-9a-f]{40}\Z")
+
 
 class InspectSourcesTest(unittest.TestCase):
     def test_classifies_current_changed_and_unreviewed(self) -> None:
