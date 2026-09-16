@@ -1,0 +1,134 @@
+name: Independent maintenance validation
+
+on:
+  push:
+    branches:
+      - ci/maintenance-validation-2026-09-16-1952
+    paths:
+      - .github/workflows/independent-maintenance-validation.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: independent-maintenance-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: base
+            sha: b1cef42590420b0b8dd1707f37c1cd9598eaf19c
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ matrix.sha }}
+          fetch-depth: 20
+          persist-credentials: false
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d
+        with:
+          sdk: stable
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+      - name: Full Dart diagnostics with safe output
+        env:
+          EXPECTED_SHA: ${{ matrix.sha }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import datetime
+          import json
+          import os
+          import platform
+          import re
+          import subprocess
+          import time
+          from pathlib import Path
+
+          actual = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          if actual != os.environ['EXPECTED_SHA']:
+              raise SystemExit('Checked-out revision does not match the approved SHA')
+          report = {
+              'tested_sha': actual,
+              'started_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'environment': platform.platform(),
+              'python': platform.python_version(),
+              'dart': subprocess.check_output(['dart', '--version'], stderr=subprocess.STDOUT, text=True).strip(),
+              'raw_output_retained': False,
+              'commands': [],
+          }
+          commands = [
+              (['dart', 'pub', 'get'], 300),
+              (['dart', 'format', '--output=none', '--set-exit-if-changed', '.'], 120),
+              (['dart', 'analyze'], 300),
+              (['dart', 'test'], 300),
+              (['git', 'diff', '--check', 'b1cef42590420b0b8dd1707f37c1cd9598eaf19c', 'HEAD'], 30),
+          ]
+          failed = False
+          for command, limit in commands:
+              started = time.monotonic()
+              try:
+                  result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=limit)
+                  code, output = result.returncode, result.stdout
+              except subprocess.TimeoutExpired as error:
+                  code, output = 124, error.output or ''
+              if isinstance(output, bytes):
+                  output = output.decode('utf-8', errors='replace')
+              output = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', output)
+              entry = {'command': command, 'exit_code': code, 'elapsed_seconds': round(time.monotonic() - started, 2)}
+              progress = re.findall(r'\b\d{2}:\d{2}\s+\+(\d+)(?:\s+~(\d+))?(?:\s+-(\d+))?', output)
+              if progress:
+                  passed, skipped, errors = progress[-1]
+                  entry['test_progress'] = {'passed': int(passed), 'skipped': int(skipped or 0), 'failed': int(errors or 0)}
+              diagnostics = re.findall(r'^\s*(error|warning|info) - ([A-Za-z0-9_./-]+):(\d+):(\d+) - .+ - ([a-z0-9_]+)\s*$', output, re.MULTILINE)
+              if diagnostics:
+                  entry['analyzer_locations'] = [dict(zip(('severity', 'path', 'line', 'column', 'code'), row)) for row in diagnostics[:50]]
+                  entry['analyzer_location_count'] = len(diagnostics)
+              failed_paths = set()
+              for line in output.splitlines():
+                  if '[E]' in line:
+                      failed_paths.update(re.findall(r'\btest/[A-Za-z0-9_./-]+\.dart\b', line))
+              if failed_paths:
+                  entry['failed_test_files'] = sorted(failed_paths)
+              report['commands'].append(entry)
+              print(json.dumps(entry, ensure_ascii=True))
+              failed = failed or code != 0
+              del output
+          report['completed_at_utc'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+          Path('maintenance-validation-results.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+          raise SystemExit(1 if failed else 0)
+          PY
+      - name: Deterministic source-watch tests and compilation
+        if: always()
+        run: |
+          python -m unittest -v tool.test_source_watch
+          python -m py_compile tool/source_watch.py tool/test_source_watch.py
+      - name: Generate actual read-only source report
+        if: always()
+        timeout-minutes: 5
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tool/source_watch.py --registry docs/maintenance-sources.yaml --output-dir source-watch-report
+      - name: Verify source-watch input files were not changed
+        if: always()
+        run: git diff --exit-code HEAD -- docs/maintenance-sources.yaml tool/source_watch.py tool/test_source_watch.py
+      - name: Retain safe validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: maintenance-validation-${{ matrix.label }}-${{ matrix.sha }}
+          path: |
+            maintenance-validation-results.json
+            source-watch-report/source-intelligence.json
+            source-watch-report/source-intelligence.md
+          if-no-files-found: error
+          retention-days: 14
