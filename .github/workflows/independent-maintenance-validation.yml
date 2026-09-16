@@ -24,6 +24,8 @@ jobs:
         include:
           - label: base
             sha: b1cef42590420b0b8dd1707f37c1cd9598eaf19c
+          - label: maintenance
+            sha: ec780369e229cb5f224117332e02ef3f4b3dfd13
     steps:
       - name: Check out exact reviewed revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -71,6 +73,7 @@ jobs:
               (['dart', 'format', '--output=none', '--set-exit-if-changed', '.'], 120),
               (['dart', 'analyze'], 300),
               (['dart', 'test'], 300),
+              (['dart', 'test', '--reporter=json'], 300),
               (['git', 'diff', '--check', 'b1cef42590420b0b8dd1707f37c1cd9598eaf19c', 'HEAD'], 30),
           ]
           failed = False
@@ -99,6 +102,44 @@ jobs:
                       failed_paths.update(re.findall(r'\btest/[A-Za-z0-9_./-]+\.dart\b', line))
               if failed_paths:
                   entry['failed_test_files'] = sorted(failed_paths)
+              if command == ['dart', 'test', '--reporter=json']:
+                  suites, tests, completed, categories = {}, {}, [], set()
+                  known_errors = ('SocketException', 'HandshakeException', 'HttpException', 'TimeoutException', 'FormatException', 'TypeError', 'NoSuchMethodError', 'StateError', 'VideoUnavailableException', 'VideoUnplayableException', 'YoutubeExplodeException')
+                  for line in output.splitlines():
+                      try:
+                          event = json.loads(line)
+                      except (json.JSONDecodeError, TypeError):
+                          continue
+                      if not isinstance(event, dict):
+                          continue
+                      kind = event.get('type')
+                      if kind == 'suite':
+                          suite = event.get('suite', {})
+                          path = suite.get('path', '')
+                          paths = re.findall(r'\btest/[A-Za-z0-9_./-]+\.dart\b', str(path))
+                          suites[suite.get('id')] = paths[0] if paths else 'unclassified'
+                      elif kind == 'testStart':
+                          test = event.get('test', {})
+                          tests[test.get('id')] = test.get('suiteID')
+                      elif kind == 'testDone' and not event.get('hidden', False):
+                          completed.append(event)
+                      elif kind == 'error':
+                          text = str(event.get('error', ''))
+                          categories.update(name for name in known_errors if name in text)
+                          if re.search(r'\b403\b', text):
+                              categories.add('HTTP 403 mentioned')
+                          if re.search(r'\b429\b', text):
+                              categories.add('HTTP 429 mentioned')
+                          if 'Failed to load' in text:
+                              categories.add('test loading failure')
+                  entry['supplementary_json_diagnostics'] = {
+                      'passed': sum(e.get('result') == 'success' and not e.get('skipped') for e in completed),
+                      'skipped': sum(bool(e.get('skipped')) for e in completed),
+                      'failed': sum(e.get('result') in ('failure', 'error') for e in completed),
+                      'failed_test_files': sorted({suites.get(tests.get(e.get('testID')), 'unclassified') for e in completed if e.get('result') in ('failure', 'error')}),
+                      'error_categories': sorted(categories),
+                      'raw_errors_retained': False,
+                  }
               report['commands'].append(entry)
               print(json.dumps(entry, ensure_ascii=True))
               failed = failed or code != 0
