@@ -34,6 +34,27 @@ The workflow has `contents: read` permission only. It does not push commits, upd
 
 A `changed` status does not fail the workflow. An `error` does, while still uploading the report through an `always()` step.
 
+## Diagnosing a failed source report
+
+Download the report artifact and inspect `sources` entries with `status: "error"`.
+An exit code of `1` means at least one lookup failed, not that report generation
+or every source failed. Exit code `2` indicates an invalid/unreadable registry.
+
+For a missing branch, verify the intended tracked branch using repository
+metadata and the commit endpoint before correcting the registry. A default branch
+is evidence to investigate, not an automatic fallback: some sources intentionally
+track non-default branches. Do not suppress errors, add `continue-on-error`, or
+replace `reviewed_commit` with an unreviewed head merely to make the job green.
+
+[Run 34825002484](https://github.com/mayanksharma2026/youtube_explode_dart/actions/runs/34825002484)
+on 2026-09-14 produced reports for all 24 sources but recorded one error:
+`souravkaushik-dev/chameleon@master` returned HTTP 422. On 2026-09-16, GitHub
+confirmed that `master` had no matching commit and `main` resolved to
+`9360b48dc4f08ab14329a57da6b2d23f9f4ab48a`. The registry now tracks `main`, retaining
+the existing reviewed SHA and review dates. This corrects lookup metadata; it
+does not approve the newer downstream code. See the dated
+[survey correction](fork-survey.md#2026-09-16-branch-metadata-correction).
+
 ## Running locally
 
 ```bash

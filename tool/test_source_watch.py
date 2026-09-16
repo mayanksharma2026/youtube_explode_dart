@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import io
 import json
 import pathlib
 import tempfile
 import unittest
+import urllib.error
+from contextlib import redirect_stdout
+from unittest import mock
 
 from tool.source_watch import (
     Head,
     Source,
+    fetch_head,
     inspect_sources,
+    main,
     parse_registry,
     render_json,
     render_markdown,
@@ -77,6 +83,20 @@ second:
             with self.assertRaisesRegex(ValueError, "Duplicate source"):
                 parse_registry(path)
 
+    def test_chameleon_registry_uses_verified_main_branch(self) -> None:
+        # Run 34825002484 failed because this entry incorrectly tracked master.
+        registry = (
+            pathlib.Path(__file__).resolve().parents[1]
+            / "docs/maintenance-sources.yaml"
+        )
+        sources = [
+            source
+            for source in parse_registry(registry)
+            if source.repo == "souravkaushik-dev/chameleon"
+        ]
+        self.assertEqual(len(sources), 1)
+        self.assertEqual(sources[0].branch, "main")
+
 
 class InspectSourcesTest(unittest.TestCase):
     def test_classifies_current_changed_and_unreviewed(self) -> None:
@@ -129,6 +149,127 @@ class InspectSourcesTest(unittest.TestCase):
         self.assertEqual(result[0].status, "current")
         self.assertEqual(result[1].status, "error")
         self.assertEqual(result[1].error, "not found")
+
+
+class FetchHeadTest(unittest.TestCase):
+    def test_missing_branch_is_not_retried_or_silently_replaced(self) -> None:
+        source = Source(
+            "production_downstream_copies",
+            "souravkaushik-dev/chameleon",
+            "master",
+            None,
+            "downstream-signal",
+        )
+        url = (
+            "https://api.github.com/repos/"
+            "souravkaushik-dev/chameleon/commits/master"
+        )
+        error = urllib.error.HTTPError(
+            url, 422, "No commit found for SHA: master", None, None,
+        )
+        with (
+            mock.patch(
+                "tool.source_watch.urllib.request.urlopen", side_effect=error,
+            ) as urlopen,
+            mock.patch("tool.source_watch.time.sleep") as sleep,
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"^GitHub returned HTTP 422 for "
+                r"souravkaushik-dev/chameleon@master$",
+            ):
+                fetch_head(source)
+
+        urlopen.assert_called_once()
+        self.assertEqual(urlopen.call_args.args[0].full_url, url)
+        sleep.assert_not_called()
+
+
+class MainTest(unittest.TestCase):
+    def test_exit_status_and_complete_reports_with_and_without_errors(self) -> None:
+        registry_text = '''\
+tracked:
+  - repo: "owner/first"
+    branch: "main"
+    reviewed_commit: "same"
+  - repo: "owner/changed"
+    branch: "main"
+    reviewed_commit: "old"
+  - repo: "owner/unreviewed"
+    branch: "dev"
+'''
+        error_message = "GitHub returned HTTP 422 for owner/first@main"
+        for has_error in (False, True):
+            with self.subTest(has_error=has_error):
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    registry = pathlib.Path(temp_dir) / "sources.yaml"
+                    registry.write_text(registry_text, encoding="utf-8")
+                    output_dir = pathlib.Path(temp_dir) / "reports"
+                    first = (
+                        RuntimeError(error_message) if has_error
+                        else Head("same", None, "current", None)
+                    )
+                    with (
+                        mock.patch(
+                            "tool.source_watch.fetch_head",
+                            side_effect=[
+                                first,
+                                Head("new", None, "changed", None),
+                                Head("first", None, "unreviewed", None),
+                            ],
+                        ) as fetcher,
+                        mock.patch(
+                            "tool.source_watch._utc_now",
+                            return_value="2026-09-16T00:00:00Z",
+                        ),
+                        redirect_stdout(io.StringIO()),
+                    ):
+                        result = main([
+                            "--registry", str(registry),
+                            "--output-dir", str(output_dir),
+                            "--github-token", "",
+                        ])
+
+                    self.assertEqual(result, 1 if has_error else 0)
+                    self.assertEqual(fetcher.call_count, 3)
+                    payload = json.loads(
+                        (output_dir / "source-intelligence.json").read_text(
+                            encoding="utf-8",
+                        )
+                    )
+                    markdown = (output_dir / "source-intelligence.md").read_text(
+                        encoding="utf-8",
+                    )
+                    self.assertEqual(payload["schema_version"], 1)
+                    self.assertEqual(payload["summary"], {
+                        "sources": 3,
+                        "current": 0 if has_error else 1,
+                        "changed": 1,
+                        "unreviewed": 1,
+                        "errors": 1 if has_error else 0,
+                    })
+                    self.assertEqual(
+                        [row["status"] for row in payload["sources"]],
+                        [
+                            "error" if has_error else "current",
+                            "changed",
+                            "unreviewed",
+                        ],
+                    )
+                    self.assertIn("Review queue", markdown)
+                    for repo in (
+                        "owner/first", "owner/changed", "owner/unreviewed",
+                    ):
+                        self.assertIn(repo, markdown)
+                    if has_error:
+                        self.assertIn(error_message, markdown)
+                        self.assertEqual(
+                            payload["sources"][0]["error"], error_message,
+                        )
+                        self.assertIsNone(payload["sources"][0]["current_head"])
+                    self.assertEqual(
+                        registry.read_text(encoding="utf-8"), registry_text,
+                    )
 
 
 class RenderTest(unittest.TestCase):
